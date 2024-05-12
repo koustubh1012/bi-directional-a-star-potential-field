@@ -16,6 +16,10 @@ closed_set = set()               # set to store the value of visited and closed 
 closed_list = []
 visited={}
 
+closed_set_2 = set()               # set to store the value of visited and closed points
+closed_list_2 = []
+visited_2={}
+
 # C = int(input("Enter the clearance from the obstacle in mm: "))     # Get clearance from the user
 # C = C/10
 C = 0
@@ -34,8 +38,6 @@ y_goal = 0  # Initialize the goal y coordinate
 x_start = 0 # Initialize the start x coordinate
 y_start = 0 # Initialize the start y coordinate
 node=(0, 0, 1, [], (x_start, y_start), 0)
-
-
 
 '''
 Loop to define the obstacle points in the map
@@ -72,20 +74,22 @@ for y in range(300):                                       # loop to define the 
             c2c_node_grid[x][y] = -1                       # mark the points in the cost to come grid with -1
             tc_node_grid[x][y] = -1                        # mark the points in the total cost grid with -1
 
-
- # Mark the obstacle points in the frame, including points after bloating
+# Mark the obstacle points in the frame, including points after bloating
 for point in obstacle_list:                            # loop to mark the obstacle points
     canvas[point[1],point[0]] = [255, 0, 0]            # mark the obstacle points with blue color
 
-x_start = 0
+x_start =0
 y_start = 150
 theta_start = 0
 x_goal = 600
 y_goal = 150
 rpm1 = 5
 rpm2 = 10
+goal_found = False
+theta_goal = 180
 
 initial_node = (0, 0, 1, [], (x_start, y_start), theta_start)
+initial_node_2 = (0, 0, 1, [], (x_goal, y_goal), theta_goal)
 
 min_rpm = min(rpm1,rpm2)
 
@@ -95,15 +99,16 @@ print("Calculated time step: ", t)
 # Funtion to update the visted nodes
 def visited_node(node):
     visited.update({node[2]:node[4]})
+    
+def visited_node_2(node):
+    visited_2.update({node[2]:node[4]})
 
-def actionnn(node,rpm1,rpm2):
+def action1(node,rpm1,rpm2):
     ul = 2*math.pi*rpm1/60
     ur = 2*math.pi*rpm2/60
     new_heading = (node[5] + np.rad2deg(((R/L)*(ul - ur)*t))) % 360        # get the current heading of the robot
     x_vel = (R/2)*(ur+ul)*np.cos(np.deg2rad(new_heading))
     y_vel = (R/2)*(ur+ul)*np.sin(np.deg2rad(new_heading))
-    # print("X vel: ", x_vel)
-    # print("Y vel: ", y_vel)
     x = node[4][0] + x_vel*t # calculate the new x coordinate
     y = node[4][1] + y_vel*t # calculate the new y coordinate
     x = round(x)
@@ -113,8 +118,22 @@ def actionnn(node,rpm1,rpm2):
     tc = c2c + c2g                                   # calculate the total cost
     return (x,y),new_heading,tc,c2c                  # return the new node's coordinates, heading, total cost and cost to come
 
-action_lists=[(0,rpm1),(rpm1,0),(rpm1,rpm1),(rpm1,rpm2),(rpm2,rpm1),(0,rpm2),(rpm2,0),(rpm2,rpm2)]
+def action2(node,rpm1,rpm2):
+    ul = 2*math.pi*rpm1/60
+    ur = 2*math.pi*rpm2/60
+    new_heading = (node[5] + np.rad2deg(((R/L)*(ul - ur)*t))) % 360        # get the current heading of the robot
+    x_vel = (R/2)*(ur+ul)*np.cos(np.deg2rad(new_heading))
+    y_vel = (R/2)*(ur+ul)*np.sin(np.deg2rad(new_heading))
+    x = node[4][0] + x_vel*t # calculate the new x coordinate
+    y = node[4][1] + y_vel*t # calculate the new y coordinate
+    x = round(x)
+    y = round(y)
+    c2c = node[1] + math.sqrt((x_vel*t)**2 + (y_vel*t)**2)                                    # calculate the cost to come
+    c2g = math.sqrt((y_start-y)**2 + (x_start-x)**2)   # calculate the cost to goal
+    tc = c2c + c2g                                   # calculate the total cost
+    return (x,y),new_heading,tc,c2c                  # return the new node's coordinates, heading, total cost and cost to come
 
+action_lists=[(0,rpm1),(rpm1,0),(rpm1,rpm1),(rpm1,rpm2),(rpm2,rpm1),(0,rpm2),(rpm2,0),(rpm2,rpm2)]
 
 start_time = time.time()
 new_index = 1
@@ -122,21 +141,36 @@ open_list = []
 hq.heappush(open_list,initial_node)        # Push initial node to the list
 hq.heapify(open_list)                      # covers list to heapq data type
 
-while(open_list):
+new_index_2 = 1
+open_list_2 = []
+hq.heappush(open_list_2,initial_node_2)        # Push initial node to the list
+hq.heapify(open_list_2)                      # covers list to heapq data type
+
+while(not goal_found):
     node = hq.heappop(open_list)       # pop the node with lowest cost to come
     closed_list.append(node[4])            # add the node coordinates to closed set
     closed_set.add(node[4])
     visited_node(node)                 # add the node to the visited list
     index = node[2]                    # store the index of the current node
     parent_index = node[3]             # store the parent index list of current node
+    
+    node_2 = hq.heappop(open_list_2)       # pop the node with lowest cost to come
+    closed_list.append(node_2[4])            # add the node coordinates to closed set
+    closed_set_2.add(node_2[4])
+    visited_node_2(node_2)                 # add the node to the visited list
+    index_2 = node_2[2]                    # store the index of the current node
+    parent_index_2 = node_2[3]             # store the parent index list of current node
 
-    node_dist = math.sqrt((node[4][0]-x_goal)**2 + (node[4][1]-y_goal)**2)     # calculate the distance between the current node and goal node
-    if node_dist < 5:    # if the node is goal position, exit the loop
+    # node_dist = math.sqrt((node[4][0]-x_goal)**2 + (node[4][1]-y_goal)**2)     # calculate the distance between the current node and goal node
+    # if node_dist < 5:    # if the node is goal position, exit the loop
+    #     print("Goal reached")
+    #     break
+    if node[4] in closed_set_2 or node_2[4] in closed_set:
         print("Goal reached")
         break
-
+    
     for action_set in action_lists:
-        point, new_heading, tc, c2c = actionnn(node,action_set[0],action_set[1])
+        point, new_heading, tc, c2c = action1(node,action_set[0],action_set[1])
         if point not in obstacle_set and point not in closed_set and 0<=point[0]<600 and 0<=point[1]<300:           # check if the new node is in the obstacle set or visited list
             x = int(point[0])                                                    # get the x coordinathe te of the new node
             y = int(point[1])                                                    # get the y coordinate of the new node
@@ -149,6 +183,23 @@ while(open_list):
                     c2c_node_grid[x][y] = c2c                                   # Update the new cost to come
                     new_node = (tc, c2c, new_index, new_parent_index, (x,y), new_heading) # create the new node
                     hq.heappush(open_list, new_node)                            # push the new node to the open list
+            except:
+                print(x,y)
+                
+    for action_set in action_lists:
+        point, new_heading, tc, c2c = action2(node_2,action_set[0],action_set[1])
+        if point not in obstacle_set and point not in closed_set_2 and 0<=point[0]<600 and 0<=point[1]<300:           # check if the new node is in the obstacle set or visited list
+            x = int(point[0])                                                    # get the x coordinathe te of the new node
+            y = int(point[1])                                                    # get the y coordinate of the new node
+            try:
+                if tc<tc_node_grid[x][y]:                                       # check if the new cost to come is less than original cost to come
+                    new_parent_index = parent_index_2.copy()                      # copy the parent index list of the current node
+                    new_parent_index.append(index)                              # Append the current node's index to the new node's parent index list
+                    new_index_2+=1                                                # increment the index
+                    tc_node_grid[x][y] = tc                                     # Update the new total cost
+                    c2c_node_grid[x][y] = c2c                                   # Update the new cost to come
+                    new_node = (tc, c2c, new_index_2, new_parent_index, (x,y), new_heading) # create the new node
+                    hq.heappush(open_list_2, new_node)                            # push the new node to the open list
             except:
                 print(x,y)
 
@@ -171,7 +222,6 @@ print("Exploring map")
 
 # print(closed_set)
 for node in closed_list:                                                  # loop to mark the explored nodes
-
     # canvas[node[1], node[0]] = [0, 255, 0]                               # mark the explored nodes with green color
     cv2.circle(canvas, node, 1, (0,255,0), -1)             # mark the goal point with red color
     counter +=1                                                          # increment the counter
@@ -180,8 +230,6 @@ for node in closed_list:                                                  # loop
         cv2.circle(canvas,(x_goal, y_goal), 5, (255,0,255), -1)             # mark the goal point with red color
         canvas_flipped = cv2.flip(canvas,0)                              # flip the frame
         canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)       # convert the frame to uint8
-        # cv2.imshow('window',canvas_flipped_uint8)
-        # cv2.waitKey(1)
         video_writer.write(canvas_flipped_uint8)                         # write the frame to video
 
 '''
@@ -191,15 +239,10 @@ print("Backtracking")
 
 for index in path:                                                        # loop to mark the path
     coord=visited[index]                                                  # get the coordinates of the node
-
     cv2.circle(canvas, (coord[0],coord[1]), 1, [0,0,0], -1)               # mark the path with black color
     canvas_flipped = cv2.flip(canvas, 0)
     canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
-    # cv2.imshow('window',canvas_flipped_uint8)
-    # cv2.waitKey(1)
-
     video_writer.write(canvas_flipped_uint8)                              # write the frame to video
-
 
 
 '''
