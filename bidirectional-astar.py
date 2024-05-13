@@ -22,10 +22,6 @@ closed_list_2 = []
 visited_2={}
 visited_node_list_2 = []
 
-# C = int(input("Enter the clearance from the obstacle in mm: "))     # Get clearance from the user
-# C = C/10
-C = 0
-
 # All units are in cm
 R = 66/20                                                  # Robot wheel radius
 r = 22                                                   # Robot radius
@@ -80,13 +76,13 @@ for y in range(300):                                       # loop to define the 
 for point in obstacle_list:                            # loop to mark the obstacle points
     canvas[point[1],point[0]] = [255, 0, 0]            # mark the obstacle points with blue color
 
-x_start =0
+x_start = 0
 y_start = 150
 theta_start = 0
 x_goal = 600
 y_goal = 150
 rpm1 = 5
-rpm2 = 10
+rpm2 = 5
 goal_found = False
 theta_goal = 180
 reached_from_start = False
@@ -98,9 +94,8 @@ initial_node_2 = (0, 0, 1, [], (x_goal, y_goal), theta_goal)
 min_rpm = min(rpm1,rpm2)
 
 t = round(((t_max - t_min)*(min_rpm - 75)/(5 - 75)) + t_min, 2)                     # Calculate time step
-print("Calculated time step: ", t)
 
-# Funtion to update the visted nodes
+# Function to update the visited nodes
 def visited_node(node):
     visited.update({node[2]:node[4]})
     
@@ -167,20 +162,14 @@ while(not goal_found):
     index_2 = node_2[2]                    # store the index of the current node
     parent_index_2 = node_2[3]             # store the parent index list of current node
 
-    # node_dist = math.sqrt((node[4][0]-x_goal)**2 + (node[4][1]-y_goal)**2)     # calculate the distance between the current node and goal node
-    # if node_dist < 5:    # if the node is goal position, exit the loop
-    #     print("Goal reached")
-    #     break
     if node[4] in closed_set_2:
         print("Goal reached from start")
         path_1 = node
-        # print(path_1[4])
         reached_from_start = True
         break
     if node_2[4] in closed_set:
         print("Goal reached from goal")
         path_2 = node_2
-        # print(path_2[4])
         reached_from_goal = True
         break
     
@@ -219,14 +208,6 @@ while(not goal_found):
                 print(x,y)
 
 
-
-print("Actual goal reached :",(node[4][0])*10, (node[4][1]-150)*10)
-
-
-# path = node[3]            # Get the parent node list
-# path_2 = node_2[3]
-# print(path)
-# print(path_2)
 counter = 0               # counter to count the frames to write on video
 
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for MP4 format
@@ -260,6 +241,15 @@ if reached_from_start:
         canvas_flipped = cv2.flip(canvas, 0)
         canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
         video_writer.write(canvas_flipped_uint8)                              # write the frame to video
+        
+    for node in visited_node_list_2:
+        if node[4] == path_1[4]:
+            for index in node[3]:                                                        # loop to mark the path
+                coord=visited_2[index]                                                  # get the coordinates of the node
+                cv2.circle(canvas, (coord[0],coord[1]), 1, [0,0,0], -1)               # mark the path with black color
+                canvas_flipped = cv2.flip(canvas, 0)
+                canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
+                video_writer.write(canvas_flipped_uint8)                              # write the frame to video
 
 
 elif reached_from_goal:
