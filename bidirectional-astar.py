@@ -236,8 +236,6 @@ video_writer = cv2.VideoWriter('output/new_output.mp4', fourcc, 60, (600, 300)) 
 Loop to mark the explored nodes in order on the frame
 '''
 print("Exploring map")
-
-
 # print(closed_set)
 for node in closed_list:                                                  # loop to mark the explored nodes
     # canvas[node[1], node[0]] = [0, 255, 0]                               # mark the explored nodes with green color
@@ -256,20 +254,19 @@ if reached_from_start:
     Loop to mark the path created
     '''
     print("Backtracking")
-
     for index in path_1[3]:                                                        # loop to mark the path
         coord=visited[index]                                                  # get the coordinates of the node
         cv2.circle(canvas, (coord[0],coord[1]), 1, [0,0,0], -1)               # mark the path with black color
         canvas_flipped = cv2.flip(canvas, 0)
         canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
-    video_writer.write(canvas_flipped_uint8)                              # write the frame to video
+        video_writer.write(canvas_flipped_uint8)                              # write the frame to video
+
 
 elif reached_from_goal:
     '''
     Loop to mark the path created
     '''
     print("Backtracking 2")
-
     for index in path_2[3]:                                                        # loop to mark the path
         coord=visited_2[index]                                                  # get the coordinates of the node
         cv2.circle(canvas, (coord[0],coord[1]), 1, [0,0,0], -1)               # mark the path with black color
@@ -277,11 +274,15 @@ elif reached_from_goal:
         canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
         video_writer.write(canvas_flipped_uint8)                              # write the frame to video
         
-    # for node in visited_node:
-    #     if node[4] == path_2[4]:
-    #         print(node)
-    #         print(node[4])
-    #         print(path_2[4])
+    for node in visited_node_list:
+        if node[4] == path_2[4]:
+            for index in node[3]:                                                        # loop to mark the path
+                coord=visited[index]                                                  # get the coordinates of the node
+                cv2.circle(canvas, (coord[0],coord[1]), 1, [0,0,0], -1)               # mark the path with black color
+                canvas_flipped = cv2.flip(canvas, 0)
+                canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
+                video_writer.write(canvas_flipped_uint8)                              # write the frame to video
+            
 
 
 '''
