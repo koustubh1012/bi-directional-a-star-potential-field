@@ -15,10 +15,12 @@ tc_node_grid = [[float('inf')] * 300 for _ in range(600)]        # create a 2D a
 closed_set = set()               # set to store the value of visited and closed points
 closed_list = []
 visited={}
+visited_node_list = []
 
 closed_set_2 = set()               # set to store the value of visited and closed points
 closed_list_2 = []
 visited_2={}
+visited_node_list_2 = []
 
 # C = int(input("Enter the clearance from the obstacle in mm: "))     # Get clearance from the user
 # C = C/10
@@ -87,6 +89,8 @@ rpm1 = 5
 rpm2 = 10
 goal_found = False
 theta_goal = 180
+reached_from_start = False
+reached_from_goal = False
 
 initial_node = (0, 0, 1, [], (x_start, y_start), theta_start)
 initial_node_2 = (0, 0, 1, [], (x_goal, y_goal), theta_goal)
@@ -100,8 +104,8 @@ print("Calculated time step: ", t)
 def visited_node(node):
     visited.update({node[2]:node[4]})
     
-def visited_node_2(node):
-    visited_2.update({node[2]:node[4]})
+def visited_node_2(node_2):
+    visited_2.update({node_2[2]:node_2[4]})
 
 def action1(node,rpm1,rpm2):
     ul = 2*math.pi*rpm1/60
@@ -151,6 +155,7 @@ while(not goal_found):
     closed_list.append(node[4])            # add the node coordinates to closed set
     closed_set.add(node[4])
     visited_node(node)                 # add the node to the visited list
+    visited_node_list.append(node)
     index = node[2]                    # store the index of the current node
     parent_index = node[3]             # store the parent index list of current node
     
@@ -158,6 +163,7 @@ while(not goal_found):
     closed_list.append(node_2[4])            # add the node coordinates to closed set
     closed_set_2.add(node_2[4])
     visited_node_2(node_2)                 # add the node to the visited list
+    visited_node_list_2.append(node_2)
     index_2 = node_2[2]                    # store the index of the current node
     parent_index_2 = node_2[3]             # store the parent index list of current node
 
@@ -165,8 +171,17 @@ while(not goal_found):
     # if node_dist < 5:    # if the node is goal position, exit the loop
     #     print("Goal reached")
     #     break
-    if node[4] in closed_set_2 or node_2[4] in closed_set:
-        print("Goal reached")
+    if node[4] in closed_set_2:
+        print("Goal reached from start")
+        path_1 = node
+        # print(path_1[4])
+        reached_from_start = True
+        break
+    if node_2[4] in closed_set:
+        print("Goal reached from goal")
+        path_2 = node_2
+        # print(path_2[4])
+        reached_from_goal = True
         break
     
     for action_set in action_lists:
@@ -193,13 +208,13 @@ while(not goal_found):
             y = int(point[1])                                                    # get the y coordinate of the new node
             try:
                 if tc<tc_node_grid[x][y]:                                       # check if the new cost to come is less than original cost to come
-                    new_parent_index = parent_index_2.copy()                      # copy the parent index list of the current node
-                    new_parent_index.append(index)                              # Append the current node's index to the new node's parent index list
+                    new_parent_index_2 = parent_index_2.copy()                      # copy the parent index list of the current node
+                    new_parent_index_2.append(index_2)                              # Append the current node's index to the new node's parent index list
                     new_index_2+=1                                                # increment the index
                     tc_node_grid[x][y] = tc                                     # Update the new total cost
                     c2c_node_grid[x][y] = c2c                                   # Update the new cost to come
-                    new_node = (tc, c2c, new_index_2, new_parent_index, (x,y), new_heading) # create the new node
-                    hq.heappush(open_list_2, new_node)                            # push the new node to the open list
+                    new_node_2 = (tc, c2c, new_index_2, new_parent_index_2, (x,y), new_heading) # create the new node
+                    hq.heappush(open_list_2, new_node_2)                            # push the new node to the open list
             except:
                 print(x,y)
 
@@ -208,7 +223,10 @@ while(not goal_found):
 print("Actual goal reached :",(node[4][0])*10, (node[4][1]-150)*10)
 
 
-path = node[3]            # Get the parent node list
+# path = node[3]            # Get the parent node list
+# path_2 = node_2[3]
+# print(path)
+# print(path_2)
 counter = 0               # counter to count the frames to write on video
 
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for MP4 format
@@ -231,18 +249,39 @@ for node in closed_list:                                                  # loop
         canvas_flipped = cv2.flip(canvas,0)                              # flip the frame
         canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)       # convert the frame to uint8
         video_writer.write(canvas_flipped_uint8)                         # write the frame to video
+        
+        
+if reached_from_start:
+    '''
+    Loop to mark the path created
+    '''
+    print("Backtracking")
 
-'''
-Loop to mark the path created
-'''
-print("Backtracking")
-
-for index in path:                                                        # loop to mark the path
-    coord=visited[index]                                                  # get the coordinates of the node
-    cv2.circle(canvas, (coord[0],coord[1]), 1, [0,0,0], -1)               # mark the path with black color
-    canvas_flipped = cv2.flip(canvas, 0)
-    canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
+    for index in path_1[3]:                                                        # loop to mark the path
+        coord=visited[index]                                                  # get the coordinates of the node
+        cv2.circle(canvas, (coord[0],coord[1]), 1, [0,0,0], -1)               # mark the path with black color
+        canvas_flipped = cv2.flip(canvas, 0)
+        canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
     video_writer.write(canvas_flipped_uint8)                              # write the frame to video
+
+elif reached_from_goal:
+    '''
+    Loop to mark the path created
+    '''
+    print("Backtracking 2")
+
+    for index in path_2[3]:                                                        # loop to mark the path
+        coord=visited_2[index]                                                  # get the coordinates of the node
+        cv2.circle(canvas, (coord[0],coord[1]), 1, [0,0,0], -1)               # mark the path with black color
+        canvas_flipped = cv2.flip(canvas, 0)
+        canvas_flipped_uint8 = cv2.convertScaleAbs(canvas_flipped)            # convert the frame to uint8
+        video_writer.write(canvas_flipped_uint8)                              # write the frame to video
+        
+    # for node in visited_node:
+    #     if node[4] == path_2[4]:
+    #         print(node)
+    #         print(node[4])
+    #         print(path_2[4])
 
 
 '''
