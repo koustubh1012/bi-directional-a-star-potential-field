@@ -31,12 +31,6 @@ T = 1                                                 # Total clearance
 t_max = 3.5
 t_min = 0.1
 
-x_goal = 0  # Initialize the goal x coordinate
-y_goal = 0  # Initialize the goal y coordinate
-x_start = 0 # Initialize the start x coordinate
-y_start = 0 # Initialize the start y coordinate
-node=(0, 0, 1, [], (x_start, y_start), 0)
-
 '''
 Loop to define the obstacle points in the map
 '''
@@ -88,8 +82,8 @@ theta_goal = 180
 reached_from_start = False
 reached_from_goal = False
 
-initial_node = (0, 0, 1, [], (x_start, y_start), theta_start)
-initial_node_2 = (0, 0, 1, [], (x_goal, y_goal), theta_goal)
+initial_node = (0, 0, 1, [], (x_start, y_start), theta_start)         # Initial node from start point
+initial_node_2 = (0, 0, 1, [], (x_goal, y_goal), theta_goal)          # Initial node from goal point
 
 min_rpm = min(rpm1,rpm2)
 
@@ -102,6 +96,7 @@ def visited_node(node):
 def visited_node_2(node_2):
     visited_2.update({node_2[2]:node_2[4]})
 
+# Function to generate the actions using action set
 def action1(node,rpm1,rpm2):
     ul = 2*math.pi*rpm1/60
     ur = 2*math.pi*rpm2/60
@@ -117,6 +112,7 @@ def action1(node,rpm1,rpm2):
     tc = c2c + c2g                                   # calculate the total cost
     return (x,y),new_heading,tc,c2c                  # return the new node's coordinates, heading, total cost and cost to come
 
+# Function to generate the actions using action set
 def action2(node,rpm1,rpm2):
     ul = 2*math.pi*rpm1/60
     ur = 2*math.pi*rpm2/60
