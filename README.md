@@ -1,4 +1,4 @@
-# Bi - directional and Potential Field Algorithms
+# Bi - directional A* and Potential Field Algorithms
 
 This repository contains implementations of two path planning algorithms:
 
